@@ -11,6 +11,7 @@ class CdV(object):
 	b = .5
 
 	m = np.array([1,2])
+	# eq. 14
 	alpha = 8*np.sqrt(2)*m**2*(b**2+m**2-1)/np.pi/(4*m**2-1)/(b**2+m**2)
 	beta = beta*b**2/(b**2+m**2)
 	delta = 64*np.sqrt(2)*(b**2-m**2+1)/15/np.pi/(b**2+m**2)
@@ -37,11 +38,12 @@ class CdV(object):
 		assert len(x.shape) == 2, 'Input needs to be a two-dimensional array.'
 		Nx = np.zeros(x.shape)
 
-		Nx[:,1] = -CdV.alpha[0]*x[:,0]*x[:,2] - CdV.delta[0]*x[:,3]*x[:,5]
-		Nx[:,2] = CdV.alpha[0]*x[:,0]*x[:,1] + CdV.delta[0]*x[:,3]*x[:,4]
-		Nx[:,3] = CdV.epsilon*(x[:,1]*x[:,5] - x[:,2]*x[:,4])
-		Nx[:,4] = -CdV.alpha[1]*x[:,0]*x[:,5] - CdV.delta[1]*x[:,2]*x[:,3]
-		Nx[:,5] = CdV.alpha[1]*x[:,0]*x[:,4] + CdV.delta[1]*x[:,3]*x[:,1]
+		# x2 -~ x6 (x1 has no nonlinear part)
+		Nx[:,1] = -CdV.alpha[0]*x[:,0]*x[:,2] - CdV.delta[0]*x[:,3]*x[:,5] 	#x2
+		Nx[:,2] = CdV.alpha[0]*x[:,0]*x[:,1] + CdV.delta[0]*x[:,3]*x[:,4]	#x3
+		Nx[:,3] = CdV.epsilon*(x[:,1]*x[:,5] - x[:,2]*x[:,4])				#x4
+		Nx[:,4] = -CdV.alpha[1]*x[:,0]*x[:,5] - CdV.delta[1]*x[:,2]*x[:,3] 	#x5
+		Nx[:,5] = CdV.alpha[1]*x[:,0]*x[:,4] + CdV.delta[1]*x[:,3]*x[:,1]	#x6
 
 		return Nx
 
@@ -58,7 +60,7 @@ class CdV(object):
 		# dxdt[:,4] = -(CdV.alpha[1]*x[:,0] - CdV.beta[1])*x[:,5] - CdV.C*x[:,4] - CdV.delta[1]*x[:,2]*x[:,3]
 		# dxdt[:,5] = (CdV.alpha[1]*x[:,0] - CdV.beta[1])*x[:,4] - CdV.gamma_m[1]*x[:,3] - CdV.C*x[:,5] + CdV.delta[1]*x[:,3]*x[:,1]
 
-		dxdt = np.matmul(x,CdV.L) + CdV.NL(x) + CdV.b
+		dxdt = np.matmul(x, CdV.L) + CdV.NL(x) + CdV.b
 
 		return dxdt
 
@@ -69,7 +71,7 @@ def main():
 	x0 = np.array([[.11,.22,.33,.44,.55,.66]])
 	X = []
 
-	dt,T = .01,2000
+	dt,T = .01,5000
 	tt = np.arange(0,T,1)
 
 	L = CdV.L
@@ -82,7 +84,7 @@ def main():
 	print('NL of that:', CdV.NL(x_linsol))
 
 	# initial spin-up
-	for t in np.arange(0,2000,dt):
+	for t in np.arange(0,5000,dt):
 		dxdt = CdV.dynamics(x0)
 		x0 = x0 + dt*dxdt
 
@@ -97,7 +99,7 @@ def main():
 	print(X.shape)
 
 	## save data
-	# np.savez('data/traj_pt10k_dt1.npz',X=X)
+	np.savez('data/traj_pt10k_dt1.npz',X=X)
 
 	## plot trajectory in (x1, x4) plane
 	plt.figure(figsize=(2, 2))
@@ -105,7 +107,8 @@ def main():
 	plt.xlim([0.7, 1])
 	plt.ylim([-0.8, -0.1])
 
-	plt.show()
+	# plt.show()
+	plt.savefig("CdV_datagen.png", format="png")
 
 
 if __name__ == '__main__':

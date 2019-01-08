@@ -25,8 +25,8 @@ class lstm_hybrid(object):
 
 	def __init__(self, trunc_dim, l, hid_units_x, hid_units_B, params, savepath):
 
-		self.dim = self.fdim - trunc_dim
-		self.l = l 								# length of training series
+		self.dim = self.fdim - trunc_dim		# should be 5 = 6 -1
+		self.l = l 								# length of training series  (time step)
 		self.hist = None
 		
 		self.savepath = savepath
@@ -154,8 +154,9 @@ class lstm_hybrid(object):
 
 ## function that generates data series for training
 def data_proc(trunc_dim, l, idx_start=0, idx_end=10000, dt=.01):
-	
-	npzfile = np.load('./data/modal_coords_10k_std.npz')
+	cwd = os.getcwd()
+	npzfile = np.load(os.path.join(cwd, 'data\\modal_coords_10k_std_new.npz'))
+	# load L_y, b_y, xm, w, y_std
 	phys_model = CdV_base_dynamics(npzfile, dt)
 	y0 = npzfile['y'][idx_start:idx_end].copy()
 	inputs, outputs = [],[]
@@ -177,34 +178,34 @@ def data_proc(trunc_dim, l, idx_start=0, idx_end=10000, dt=.01):
 		outputs.append(dy0dt_diff[:,:-trunc_dim].copy())
 		total_dyn.append(dy0dt[:,:-trunc_dim].copy())
 		trunc_dyn.append(dy0dt_trunc[:,:-trunc_dim].copy())
-	
+
 	inputs, outputs = np.array(inputs), np.array(outputs)
+
 	inputs = np.swapaxes(inputs, 0, 1)
 	outputs = np.swapaxes(outputs, 0, 1)
 	total_dyn = np.swapaxes(np.array(total_dyn), 0, 1)
 	trunc_dyn = np.swapaxes(np.array(trunc_dyn), 0, 1)
 
 	hid_coords = np.swapaxes(np.array(hid_coords), 0, 1)
-
 	return inputs, outputs, total_dyn, trunc_dyn, hid_coords
 
 
 def main():
-	
-	npzfile = np.load('./data/modal_coords_10k_std.npz')
+	# read initial data, from generate_series_true
+	cwd = os.getcwd()
+	npzfile = np.load(os.path.join(cwd, 'data\\modal_coords_10k_std_new.npz'))
 
 	nx, nB = 1, 16    # number of hidden units in layers
 	trunc_dim = 1    # number of truncated dimensions (1 means 5-d POD)
 	l = 200         # number of time steps in model
 	sp = './logs/lstm_arch1/test1/'
 
-	train_inputs, train_outputs, *_ = data_proc(trunc_dim, l, idx_end=9000)
-	test_inputs, test_outputs, test_total, test_trunc, trunc_coords = data_proc(trunc_dim, l, idx_start=9000)
-
+	train_inputs, train_outputs, *_ = data_proc(trunc_dim, l, idx_end=4000)
+	test_inputs, test_outputs, test_total, test_trunc, trunc_coords = data_proc(trunc_dim, l, idx_start=4000)
 	lstm_model = lstm_hybrid(trunc_dim, l, hid_units_x=nx, hid_units_B=nB, params=npzfile, savepath=sp)
 	lstm_model.compile()
 	lstm_model.model.summary()
-	lstm_model.train(train_inputs, train_outputs, epochs=1000, pretrain=None)
+	lstm_model.train(train_inputs, train_outputs, epochs=400, pretrain=None)
 	lstm_model.plot_history()
 
 	## load saved weights and make test predictions
@@ -216,15 +217,17 @@ def main():
 	tt = np.linspace(.01,.01*l,l)
 	R,C = 1, 6-trunc_dim
 	f, axarr = plt.subplots(R,C)
-	for row in range(R):
-		for col in range(C):
-			dim = row*C + col
-			axarr[row,col].plot(tt, test_total[case_idx,:,dim], 'r-.', label='true')
-			axarr[row,col].plot(tt, test_pred[0][case_idx,:,dim], 'b-', label='pred')
-			axarr[row,col].plot(tt, test_trunc[case_idx,:,dim], 'g-', label='trunc')
-			axarr[row,col].set_xlim([0,.01*l])
-			axarr[row,col].set_title('mode '+str(dim+1))
-	axarr[row,col].legend(frameon=False)
+
+	# R = 1, don't need row
+	#for row in range(R):
+	for col in range(C):
+		dim = col
+		axarr[col].plot(tt, test_total[case_idx,:,dim], 'r-.', label='true')
+		axarr[col].plot(tt, test_pred[0][case_idx,:,dim], 'b-', label='pred')
+		axarr[col].plot(tt, test_trunc[case_idx,:,dim], 'g-', label='trunc')
+		axarr[col].set_xlim([0,.01*l])
+		axarr[col].set_title('mode '+str(dim+1))
+	axarr[col].legend(frameon=False)
 	plt.tight_layout()
 	plt.savefig(lstm_model.savepath+'tc'+str(case_idx)+'_total_l'+str(l)+'.png', dpi=300)
 

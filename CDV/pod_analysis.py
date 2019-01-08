@@ -79,16 +79,17 @@ def main():
 
 	## load data file
 	npzfile = np.load('./data/traj_pt10k_dt1.npz')
-	X = npz
+	X = npzfile["X"]
 
-	## center data and calculate emprical covariance
+	## center data and calculate
 	meanX = np.mean(X,axis=0)
 	stdX = np.std(X,axis=0)
 	X_center = X - meanX
-	covXX = np.matmul(X_center.T,X_center)/X.shape[0]
+	covXX = np.matmul(X_center.T,X_center)/X.shape[0]	# XX^T/N
 
 	## eigen-analysis of covariance
-	v,w = np.linalg.eig(covXX)
+	v,w = np.linalg.eig(covXX) # eigen value & eigen vector
+	# swap last two elements
 	v[[-2, -1]] = v[[-1, -2]]
 	w[:, [-2, -1]] = w[:, [-1, -2]]
 
@@ -97,7 +98,7 @@ def main():
 	print('energy percentage:',np.cumsum(v)/np.sum(v)) 		# energy percentage
 
 	y = np.matmul(X_center,w)
-	print('mode variance:',np.var(y,axis=0))
+	print('mode variance:',np.var(y,axis=0))		# S.11
 
 	## affine operators in POD space
 	L_y = np.matmul(np.matmul(w.T,CdV.L),w)
@@ -139,7 +140,7 @@ def main():
 	plt.rc('xtick', labelsize=6)
 	plt.rc('ytick', labelsize=6)
 
-	fig = plt.figure(figsize=(5, 2))
+	fig = plt.figure(figsize=(10, 4))
 	ax = plt.subplot2grid((4, 8), (0, 0), colspan=4, rowspan=4)
 	ax.scatter(X[:, 0], X[:, 3], s=1, marker='o', edgecolor='none', facecolor='k')
 	ax.set_xlim([.7, 1])

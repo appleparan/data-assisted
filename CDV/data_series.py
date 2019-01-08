@@ -3,7 +3,6 @@ from matplotlib import pyplot as plt
 
 from data_gen import CdV
 
-
 class CdV_base_dynamics(object):
 	"""
 	This object contains functions that generate POD-space trajectories 
@@ -13,6 +12,7 @@ class CdV_base_dynamics(object):
 
 	def __init__(self, params, dt=.01):
 		self.dt = dt
+		# params = npz file
 		self.L_y, self.b_y = params['L_y'], params['b_y']
 		self.xm, self.w = params['xm'], params['W']
 		self.y_std = params['y_std']
@@ -22,6 +22,7 @@ class CdV_base_dynamics(object):
 
 	def true_dynamics(self,y):
 		### returns true dynamics for a given state (vector type) ###
+		# xm + (y .* y_std) * w.T
 		X = self.xm+np.matmul(y*self.y_std,self.w.T)
 		return np.matmul(CdV.dynamics(X),self.w)/self.y_std
 
