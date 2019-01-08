@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 class Lorenz(object):
 	"""
 		dx/dt = \sigma (y - x)
@@ -64,7 +65,7 @@ def main():
 	print(x0.shape)
 	X = []
 	# time
-	dt,T = .001,100.0
+	dt,T = .01, 200.0
 	#T = 300*dt
 
 	# iteration from 0 to T, with step 1
@@ -99,7 +100,7 @@ def main():
 	print(X.shape)
 
 	## save data
-	np.savez('data/lorentz_traj_pt10k_dt1.npz',X=X)
+	np.savez('data/lorenz_traj_pt100k_dt0.001.npz',X=X)
 
 	## plot trajectory in (x1, x4) plane
 	fig = plt.figure()
